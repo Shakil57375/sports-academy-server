@@ -91,6 +91,36 @@ async function run() {
       res.send(result);
     });
 
+    // make class role pending
+    app.patch("/classes/approve/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }; // Update the filter to match the email field
+      const updatedDoc = {
+        $set: {
+          status : "approved",
+        },
+      };
+      const result = await classCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
+    app.patch("/classes/deny/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }; // Update the filter to match the email field
+      const updatedDoc = {
+        $set: {
+          status : "denied",
+        },
+      };
+      const result = await classCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
+    app.get("/classes", async(req, res)=>{
+      const result = await classCollection.find().toArray()
+        res.send(result)
+    })
+
     // verify admin
     app.get("/users/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
