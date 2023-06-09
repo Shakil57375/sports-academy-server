@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const jwt = require('jsonwebtoken');
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 
@@ -13,6 +14,24 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+
+// verifyJWT middleware
+const verifyJWT = (req, res, next) =>{
+  const authorization = req.headers.authorization;
+  if(!authorization){
+    return res.status(401).send({error: true, message : "unauthorized access"})
+  }
+
+  const token = authorization.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) =>{
+    if(error){
+      return res.status(401).send({error: true, message : "unauthorized access"})
+    }
+    req.decoded = decoded;
+    next()
+  })
+
+}
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.lc40fqb.mongodb.net/?retryWrites=true&w=majority`;
@@ -34,13 +53,19 @@ async function run() {
     const usersCollection = client.db("sportsAcademy").collection("users")
 
 
+    // jwt
+    app.post("/jwt", (req, res)=>{
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET,{expiresIn : "10h"})
+      res.send(token)
+    })
+
+
     // post users
 
     app.post("/users", async (req, res)=>{
       const body = req.body
-      console.log(body);
       const query = { email : body.email };
-      console.log(query);
       const existingUSer = await usersCollection.findOne(query);
       if (existingUSer) {
         return res.send({ message: "user already exists" });
@@ -62,6 +87,22 @@ async function run() {
       res.send(result)
     })
 
+    // verify admin
+    app.get("/users/admin/:email", verifyJWT, async(req, res)=>{
+      const email = req.params.email
+
+
+      if(req.decoded.email !== email){
+        res.send({admin : false})
+      }
+
+      const query = {email : email}
+      const user = await usersCollection.findOne(query)
+      const result = {admin : user?.role === "admin"}
+      console.log(result);
+      res.send(result)
+    })
+
     // make Instructor
     app.patch("/users/instructor/:id", async(req, res)=>{
       const id = req.params.id;
@@ -72,6 +113,22 @@ async function run() {
         }
       }
       const result = await usersCollection.updateOne(filter, updatedDoc)
+      res.send(result)
+    })
+
+    // verify Instructor
+    app.get("/users/instructor/:email", verifyJWT, async(req, res)=>{
+      const email = req.params.email
+
+
+      if(req.decoded.email !== email){
+        res.send({instructor : false})
+      }
+
+      const query = {email : email}
+      const user = await usersCollection.findOne(query)
+      const result = {instructor : user?.role === "instructor"}
+      console.log(result);
       res.send(result)
     })
 
