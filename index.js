@@ -56,6 +56,20 @@ async function run() {
     const usersCollection = client.db("sportsAcademy").collection("users");
     const classCollection = client.db("sportsAcademy").collection("classes");
 
+
+    // const verifyAdmin = async (req, res, next) => {
+    //   const email = req.decoded.email;
+    //   const query = { email : email };
+    //   const user = await usersCollection.findOne(query);
+    //   if (user?.role !== "admin") {
+    //     return res
+    //       .status(403)
+    //       .send({ error: true, message: "forbidden message" });
+    //   }
+    //   next();
+    // };
+
+
     // jwt
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -125,16 +139,25 @@ async function run() {
 
     // Get all instructors
     app.get("/instructors", async (req, res) => {
-      try {
-        const instructors = await usersCollection
-          .find({ role: "instructor" })
-          .toArray();
-        res.send(instructors);
-      } catch (error) {
-        console.error("Error retrieving instructors:", error);
-        res.status(500).send("Internal Server Error");
-      }
+      const instructors = await usersCollection
+        .find({ role: "instructor" })
+        .toArray();
+      res.send(instructors);
     });
+   
+
+    // // to get : single Instructor
+    // app.get("/instructor", async(req, res)=>{
+    //   console.log(req.query.email);
+    //   let query = {}
+    //   if(req.query?.email){
+    //     query = {email : req.query.email}
+    //   }
+    //   const result = await usersCollection.find(query, { role: "instructor" }).toArray();
+    //   res.send(result)
+    // })
+
+
 
     // verify Instructor
     app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
@@ -173,6 +196,16 @@ async function run() {
       res.send(result);
     });
 
+    // get the specific instructor classes.
+    app.get("/class", async (req, res)=>{
+      let query = {}
+      if(req.query?.email){
+        query = {instructorEmail : req.query.email}
+      }
+      const result = await classCollection.find(query).toArray()
+      res.send(result)
+    })
+
     // make class role approved
     app.patch("/classes/approve/:id", async (req, res) => {
       const id = req.params.id;
@@ -203,7 +236,7 @@ async function run() {
     // Get all instructors
     app.get("/approvedClass", async (req, res) => {
       const classes = await classCollection
-        .find({ status : "approved" })
+        .find({ status: "approved" })
         .toArray();
       res.send(classes);
     });
