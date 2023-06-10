@@ -55,24 +55,25 @@ async function run() {
 
     const usersCollection = client.db("sportsAcademy").collection("users");
     const classCollection = client.db("sportsAcademy").collection("classes");
+    const selectedClassCollection = client.db("sportsAcademy").collection("selectedClass")
 
-    // const verifyAdmin = async (req, res, next) => {
-    //   const email = req.decoded.email;
-    //   const query = { email : email };
-    //   const user = await usersCollection.findOne(query);
-    //   if (user?.role !== "admin") {
-    //     return res
-    //       .status(403)
-    //       .send({ error: true, message: "forbidden message" });
-    //   }
-    //   next();
-    // };
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email : email };
+      const user = await usersCollection.findOne(query);
+      if (user?.role !== "admin") {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden message" });
+      }
+      next();
+    };
 
     // jwt
     app.post("/jwt", (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: "10h",
+        expiresIn: "100h",
       });
       res.send(token);
     });
@@ -109,7 +110,7 @@ async function run() {
     });
 
     // verify admin
-    app.get("/users/admin/:email", verifyJWT, async (req, res) => {
+    app.get("/users/admin/:email", verifyJWT,  async (req, res) => {
       const email = req.params.email;
 
       if (req.decoded.email !== email) {
@@ -172,6 +173,7 @@ async function run() {
       const result = await usersCollection.deleteOne(query);
       res.send(result);
     });
+    
 
     // post classes
     app.post("/classes", async (req, res) => {
@@ -251,6 +253,33 @@ async function run() {
         .toArray();
       res.send(classes);
     });
+
+
+    // post a selected class
+
+    app.post("/selectedClasses", async(req, res)=>{
+      const body = req.body;
+      const result = await selectedClassCollection.insertOne(body)
+      res.send(result)
+    })
+
+    app.get("/selectedClass", async(req, res)=>{
+      let query = {}
+      if(req?.query.email){
+        query = {email : req.query.email}
+      }
+      const result = await selectedClassCollection.find(query).toArray() 
+      res.send(result)
+    })
+
+    // delete selected classes
+    app.delete("/selectedClass/:id", async(req, res)=>{
+      const id = req.params.id
+      const query = {_id : new ObjectId(id)}
+      const result = selectedClassCollection.deleteOne(query)
+      res.send(result)
+    })
+    
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
