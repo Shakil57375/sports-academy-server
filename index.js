@@ -56,7 +56,6 @@ async function run() {
     const usersCollection = client.db("sportsAcademy").collection("users");
     const classCollection = client.db("sportsAcademy").collection("classes");
 
-
     // const verifyAdmin = async (req, res, next) => {
     //   const email = req.decoded.email;
     //   const query = { email : email };
@@ -68,7 +67,6 @@ async function run() {
     //   }
     //   next();
     // };
-
 
     // jwt
     app.post("/jwt", (req, res) => {
@@ -144,20 +142,6 @@ async function run() {
         .toArray();
       res.send(instructors);
     });
-   
-
-    // // to get : single Instructor
-    // app.get("/instructor", async(req, res)=>{
-    //   console.log(req.query.email);
-    //   let query = {}
-    //   if(req.query?.email){
-    //     query = {email : req.query.email}
-    //   }
-    //   const result = await usersCollection.find(query, { role: "instructor" }).toArray();
-    //   res.send(result)
-    // })
-
-
 
     // verify Instructor
     app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
@@ -197,14 +181,14 @@ async function run() {
     });
 
     // get the specific instructor classes.
-    app.get("/class", async (req, res)=>{
-      let query = {}
-      if(req.query?.email){
-        query = {instructorEmail : req.query.email}
+    app.get("/class", async (req, res) => {
+      let query = {};
+      if (req.query?.email) {
+        query = { instructorEmail: req.query.email };
       }
-      const result = await classCollection.find(query).toArray()
-      res.send(result)
-    })
+      const result = await classCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // make class role approved
     app.patch("/classes/approve/:id", async (req, res) => {
@@ -232,8 +216,35 @@ async function run() {
       res.send(result);
     });
 
+    // add feedback
+    app.put("/classes/feedback/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const classInfo = req.body;
+      const options = { upsert: true };
+      console.log(classInfo);
+      const updateFeedback = {
+        $set: {
+          feedback: classInfo.feedback,
+        },
+      };
+      const result = await classCollection.updateOne(
+        query,
+        updateFeedback,
+        options
+      );
+      res.send(result);
+    });
+
+    // to show feedback
+    app.get("/classes/showFeedback/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await classCollection.findOne(query);
+      res.send(result);
+    });
+
     // find all the approved classes
-    // Get all instructors
     app.get("/approvedClass", async (req, res) => {
       const classes = await classCollection
         .find({ status: "approved" })
