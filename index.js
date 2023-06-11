@@ -158,6 +158,14 @@ async function run() {
       res.send(result);
     });
 
+
+    // get 6 instructor data 
+
+    app.get("/instructor", async(req, res)=>{
+      const result = await usersCollection.find({ role: "instructor" }).limit(6).toArray()
+      res.send(result)
+    })
+
     // get all the users
 
     app.get("/users", async (req, res) => {
@@ -276,7 +284,7 @@ async function run() {
     app.delete("/selectedClass/:id", async(req, res)=>{
       const id = req.params.id
       const query = {_id : new ObjectId(id)}
-      const result = selectedClassCollection.deleteOne(query)
+      const result = await selectedClassCollection.deleteOne(query)
       res.send(result)
     })
     
