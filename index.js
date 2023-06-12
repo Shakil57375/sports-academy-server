@@ -52,7 +52,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const usersCollection = client.db("sportsAcademy").collection("users");
     const classCollection = client.db("sportsAcademy").collection("classes");
@@ -131,7 +131,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/classes", async (req, res) => {
+    app.get("/classes",  async (req, res) => {
       const result = await classCollection.find().toArray();
       res.send(result);
     });
@@ -158,7 +158,7 @@ async function run() {
     });
 
     // verify Instructor
-    app.get("/users/instructor/:email", async (req, res) => {
+    app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
 
       const query = { email: email };
@@ -179,14 +179,14 @@ async function run() {
 
     // get all the users
 
-    app.get("/users", async (req, res) => {
+    app.get("/users", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
 
     // delete user
 
-    app.delete("/users/:id", async (req, res) => {
+    app.delete("/users/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await usersCollection.deleteOne(query);
@@ -299,7 +299,7 @@ async function run() {
 
     // Payment
 
-    app.post("/create-payment-intent", async (req, res) => {
+    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
       const { price } = req.body;
       console.log(price);
       const amount = price * 100;
@@ -314,7 +314,7 @@ async function run() {
       });
     });
 
-    app.post("/payments", async (req, res) => {
+    app.post("/payments", verifyJWT, async (req, res) => {
       const payment = req.body;
       console.log(payment);
       const insertedResult = await paymentsCollection.insertOne(payment); // ok
