@@ -131,8 +131,19 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/classes",  async (req, res) => {
-      const result = await classCollection.find().toArray();
+    // app.get("/classes",  async (req, res) => {
+    //   const result = await classCollection.find().toArray();
+    //   res.send(result);
+    // });
+
+    app.get("/classes", async (req, res) => {
+      const limit = parseInt(req.query.limit) || 10; // Default limit to 10 if not provided
+      const skip = parseInt(req.query.skip) || 0; // Default skip to 0 if not provided
+      const result = await classCollection
+        .find()
+        .limit(limit)
+        .skip(skip)
+        .toArray();
       res.send(result);
     });
 
@@ -365,7 +376,7 @@ async function run() {
     // enrolled class
     app.get("/enrolledStudent/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      const query = { email : email };
+      const query = { email: email };
       const result = await enrolledClassesCollection.find(query).toArray();
       res.send(result);
     });
